@@ -287,6 +287,28 @@ def loki_updater():
                     else:
                         sn.update(last_reward_block_height=lrbh)
 
+
+                if not sn.state('lokinet_reachable'):
+                    unreachable_time = now - sn.state('lokinet_last_unreachable')
+                    if unreachable_time >= 15 * 60: ### 15 minutes
+                        if not sn['notified_lokinet'] or sn['notified_lokinet'] + 60 * 60 <= now: 
+                            if notify(sn, prefix+('⚠️ WARNING: Service node _{}_ *lokinet* has been unreachable for *{}* minutes ⚠️ Update your Service node to avoid being decommissioned.').format(name, int(unreachable_time / 60))):
+                                sn.update(notified_lokinet=now)
+                elif sn.state('lokinet_reachable') and sn['notified_lokinet']:
+                    if notify(sn, prefix+('😌 Service node _{}_ Lokinet has passed a test.').format(name)):
+                                sn.update(notified_lokinet=None)
+
+
+                if not sn.state('storage_server_reachable'):
+                    unreachable_time = now - sn.state('storage_server_last_unreachable')
+                    if unreachable_time >= 15 * 60: ### 15 minutes
+                        if not sn['notified_storage_server'] or sn['notified_storage_server'] + 60 * 60 <= now: 
+                            if notify(sn, prefix+('⚠️ WARNING: Service node _{}_ *storage server* has been unreachable for *{}* minutes ⚠️ Update your Service node to avoid being decommissioned.').format(name, int(unreachable_time / 60))):
+                                sn.update(notified_storage_server=now)
+                elif sn.state('storage_server_reachable') and sn['notified_storage_server']:
+                    if notify(sn, prefix+('😌 Service node _{}_ storage server has passed a test.').format(name)):
+                                sn.update(notified_storage_server=None)
+
             # Auto-monitor checking
             sn_lists = (sns, tsns) if tsns else (sns,)
             cur.execute("SELECT id, telegram_id, discord_id FROM users WHERE auto_monitor")
